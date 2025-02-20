@@ -10,13 +10,15 @@ final isarInstanceProvider = Provider<Isar>((ref) {
   return Isar.getInstance('expense_db')!;
 });
 
-final expenseProvider = StateNotifierProvider<ExpenseNotifier, List<Expense>>((ref) {
+final expenseProvider =
+    StateNotifierProvider<ExpenseNotifier, List<Expense>>((ref) {
   final isar = ref.watch(isarInstanceProvider);
   return ExpenseNotifier(isar);
 });
 
 class ExpenseNotifier extends StateNotifier<List<Expense>> {
   final Isar _isar;
+  List<Expense> allExpenses = [];
 
   ExpenseNotifier(this._isar) : super([]) {
     loadExpenses();
@@ -24,9 +26,7 @@ class ExpenseNotifier extends StateNotifier<List<Expense>> {
 
   Future<void> loadExpenses() async {
     try {
-      final expenses = await _isar.expenses.where()
-          .sortByDateDesc()
-          .findAll();
+      final expenses = await _isar.expenses.where().sortByDateDesc().findAll();
       state = expenses;
     } catch (e) {
       print('載入支出錯誤: $e');
@@ -53,6 +53,26 @@ class ExpenseNotifier extends StateNotifier<List<Expense>> {
       await loadExpenses();
     } catch (e) {
       print('刪除支出錯誤: $e');
+    }
+  }
+
+  void filterByCategory(String category) {
+    if (category == "全部") {
+      state = allExpenses;
+    } else {
+      state = allExpenses.where((e) => e.category == category).toList();
+    }
+  }
+
+  void searchExpenses(String query) {
+    if (query.isEmpty) {
+      state = allExpenses;
+    } else {
+      state = allExpenses
+          .where((e) =>
+              e.title.toLowerCase().contains(query.toLowerCase()) ||
+              e.category.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     }
   }
 }
