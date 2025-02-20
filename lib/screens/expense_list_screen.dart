@@ -1,4 +1,6 @@
 import 'package:expense_tracker/providers/expense_providers.dart';
+import 'package:expense_tracker/widgets/BarChartWidget.dart';
+import 'package:expense_tracker/widgets/pie_chart_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,13 +25,16 @@ class ExpenseListScreen extends ConsumerWidget {
             DropdownButton<String>(
               value: selectedCategory,
               items: ['全部', '食物', '交通', '娛樂', '其他']
-                  .map((c) => DropdownMenuItem(
-                value: c,
-                child: Text(c),
-              ))
+                  .map((c) =>
+                  DropdownMenuItem(
+                    value: c,
+                    child: Text(c),
+                  ))
                   .toList(),
               onChanged: (value) {
-                ref.read(selectedCategoryProvider.notifier).state = value!;
+                ref
+                    .read(selectedCategoryProvider.notifier)
+                    .state = value!;
                 ref.read(expenseProvider.notifier).filterByCategory(value);
               },
             ),
@@ -43,6 +48,77 @@ class ExpenseListScreen extends ConsumerWidget {
               onChanged: (query) {
                 ref.read(expenseProvider.notifier).searchExpenses(query);
               },
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget buildExpenseList() {
+      return Expanded(
+        child: expenses.isEmpty
+            ? const Center(
+          child: Text('尚未有零錢支出紀錄'),
+        )
+            : ListView.builder(
+          itemCount: expenses.length,
+          itemBuilder: (context, index) {
+            final expense = expenses[index];
+            return Dismissible(
+              key: ValueKey(expense.id.toString()),
+              // 修正：將 Id 轉換為 String
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 16),
+                child: const Icon(Icons.delete, color: Colors.white),
+              ),
+              onDismissed: (_) {
+                ref
+                    .read(expenseProvider.notifier)
+                    .deleteExpense(expense.id);
+              },
+              child: ListTile(
+                title: Text(expense.title),
+                subtitle:
+                Text("${expense.amount} 元 - ${expense.category}"),
+                trailing: Text(
+                  _formatDate(expense.date),
+                  style: Theme
+                      .of(context)
+                      .textTheme
+                      .bodySmall,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    Widget buildAnalytics() {
+      return SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(
+              height: 20,
+            ),
+            const Text(
+              '類別比例',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(
+              height: 200,
+              child: PieChartWidget(expenses: expenses),
+            ),
+            const Text(
+              '每月支出',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(
+              height: 200,
+              child: BarChartWidget(expenses: expenses),
             ),
           ],
         ),
@@ -73,16 +149,18 @@ class ExpenseListScreen extends ConsumerWidget {
                     TextField(
                       controller: amountController,
                       decoration: const InputDecoration(labelText: '金額'),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 8),
                     DropdownButton<String>(
                       value: dialogSelectedCategory,
                       items: Consts.catagoryList
-                          .map((c) => DropdownMenuItem(
-                        value: c,
-                        child: Text(c),
-                      ))
+                          .map((c) =>
+                          DropdownMenuItem(
+                            value: c,
+                            child: Text(c),
+                          ))
                           .toList(),
                       onChanged: (value) {
                         setState(() {
@@ -99,7 +177,8 @@ class ExpenseListScreen extends ConsumerWidget {
                   ),
                   TextButton(
                     onPressed: () {
-                      if (titleController.text.isEmpty || amountController.text.isEmpty) {
+                      if (titleController.text.isEmpty ||
+                          amountController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('請填寫所有欄位')),
                         );
@@ -133,51 +212,28 @@ class ExpenseListScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('零錢記帳'),
-      ),
-      body: Column(
-        children: [
-          buildFilterAndSearchBar(),
-          Expanded(
-            child: expenses.isEmpty
-                ? const Center(
-              child: Text('尚未有零錢支出紀錄'),
-            )
-                : ListView.builder(
-              itemCount: expenses.length,
-              itemBuilder: (context, index) {
-                final expense = expenses[index];
-                return Dismissible(
-                  key: ValueKey(expense.id.toString()), // 修正：將 Id 轉換為 String
-                  direction: DismissDirection.endToStart,
-                  background: Container(
-                    color: Colors.red,
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16),
-                    child: const Icon(Icons.delete, color: Colors.white),
-                  ),
-                  onDismissed: (_) {
-                    ref.read(expenseProvider.notifier).deleteExpense(expense.id);
-                  },
-                  child: ListTile(
-                    title: Text(expense.title),
-                    subtitle: Text("${expense.amount} 元 - ${expense.category}"),
-                    trailing: Text(
-                      _formatDate(expense.date),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                );
-              },
-            ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("零錢記帳"),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: "記帳"),
+              Tab(text: "分析"),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: showAddExpenseDialog,
-        child: const Icon(Icons.add),
+        ),
+        body: TabBarView(
+          children: [
+            buildExpenseList(),
+            buildAnalytics(),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => showAddExpenseDialog(),
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
