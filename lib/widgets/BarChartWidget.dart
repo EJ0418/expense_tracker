@@ -34,26 +34,24 @@ class BarChartWidget extends StatelessWidget {
       ]));
       index++;
     }
-    return BarChart(
-        BarChartData(
-            barGroups: barGroup,
-            titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true)),
-                bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
+    return BarChart(BarChartData(
+        barGroups: barGroup,
+        borderData: FlBorderData(
+          show: true,
+        ),
+        titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: true, reservedSize: 40)),
+            bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, meta) {
+                      return Transform.rotate(
+                          angle: -0.4,
+                          child: Text(
                             monthlyTotals.keys.elementAt(value.toInt()),
                             style: const TextStyle(fontSize: 12),
-                          );
-                        }
-                    )
-                )
-            )
-        )
-    );
+                          ));
+                    })))));
   }
-
 }

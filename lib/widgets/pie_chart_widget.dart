@@ -29,8 +29,14 @@ class PieChartWidget extends StatelessWidget{
     return PieChart(
       PieChartData(
         sections: sections,
-        centerSpaceRadius: 40,
-        sectionsSpace: 2
+        centerSpaceRadius: 50,
+        sectionsSpace: 2,
+        borderData: FlBorderData(show: false),
+        pieTouchData: PieTouchData(
+          touchCallback: (FlTouchEvent event, pieTouchResponse){
+
+          }
+        )
       )
     );
   }
