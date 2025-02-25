@@ -64,15 +64,16 @@ class ExpenseNotifier extends StateNotifier<List<Expense>> {
     }
   }
 
-  void searchExpenses(String query) {
-    if (query.isEmpty) {
-      state = allExpenses;
-    } else {
-      state = allExpenses
-          .where((e) =>
-              e.title.toLowerCase().contains(query.toLowerCase()) ||
-              e.category.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
+  void filterExpenses({String keyword = '', String? category, DateTime? startDate, DateTime? endDate}) async{
+    final allExpenses = await _isar.expenses.where().findAll();
+
+    state = allExpenses.where((e){
+      bool matchesKeyword = keyword.isEmpty || e.title.toLowerCase().contains(keyword.toLowerCase());
+      bool matchesCategory = category == null || e.category == category;
+      bool matchesDate = (startDate == null || e.date.isAfter(startDate)) && (endDate == null || e.date.isBefore(endDate));
+      return matchesKeyword && matchesCategory && matchesDate;
+    }).toList();
+
+
   }
 }
